@@ -1,63 +1,140 @@
+# version: '3.8'
+
+# services:
+#   db:
+#     image: postgres:13
+#     environment:
+#       POSTGRES_DB: app
+#       POSTGRES_USER: app
+#       POSTGRES_PASSWORD: graceful
+#     volumes:
+#       - postgres_data:/var/lib/postgresql/data
+#     ports:
+#       - "5432:5432"
+
+#   backend:
+#     build:
+#       context: ./backend
+#       dockerfile: Dockerfile
+#     volumes:
+#       - ./backend:/app
+#     ports:
+#       - "8000:8000"
+#     depends_on:
+#       - db
+#     environment:
+#       DOMAIN: localhost
+#       ENVIRONMENT: local
+#       PROJECT_NAME: "Full Stack FastAPI Project"
+#       STACK_NAME: full-stack-fastapi-project
+#       BACKEND_CORS_ORIGINS: "http://localhost,http://localhost:5173,https://localhost,https://localhost:5173"
+#       SECRET_KEY: 12345678
+#       FIRST_SUPERUSER: devops@hng.tech
+#       FIRST_SUPERUSER_PASSWORD: devops#HNG11
+#       USERS_OPEN_REGISTRATION: "True"
+#       EMAILS_FROM_EMAIL: info@example.com
+#       SMTP_HOST: ""
+#       SMTP_USER: ""
+#       SMTP_PASSWORD: ""
+#       SMTP_TLS: "True"
+#       SMTP_SSL: "False"
+#       SMTP_PORT: "587"
+#       POSTGRES_SERVER: db
+#       POSTGRES_PORT: 5432
+#       POSTGRES_DB: app
+#       POSTGRES_USER: app
+#       POSTGRES_PASSWORD: graceful
+#     command: ["poetry", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+#   frontend:
+#     build:
+#       context: ./frontend
+#       dockerfile: Dockerfile
+#     volumes:
+#       - ./frontend:/app
+#     ports:
+#       - "3000:3000"
+#     depends_on:
+#       - backend
+#     environment:
+#       REACT_APP_BACKEND_URL: http://backend:8000
+
+# volumes:
+#   postgres_data:
+
 version: '3.8'
 
 services:
-  db:
-    image: postgres:13
-    environment:
-      POSTGRES_DB: app
-      POSTGRES_USER: app
-      POSTGRES_PASSWORD: graceful
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+  frontend:
+    build:
+      context: ./frontend
+    container_name: frontend
+    labels:
+      - "traefik.http.routers.frontend.rule=PathPrefix(`/`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls.certresolver=myresolver"
     ports:
-      - "5432:5432"
+      - "3000:3000"
 
   backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile
-    volumes:
-      - ./backend:/app
+    container_name: backend
+    labels:
+      - "traefik.http.routers.backend.rule=PathPrefix(`/api`, `/docs`)"
+      - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.http.routers.backend.tls.certresolver=myresolver"
     ports:
       - "8000:8000"
     depends_on:
       - db
+
+  db:
+    image: postgres:13
+    container_name: db
     environment:
-      DOMAIN: localhost
-      ENVIRONMENT: local
-      PROJECT_NAME: "Full Stack FastAPI Project"
-      STACK_NAME: full-stack-fastapi-project
-      BACKEND_CORS_ORIGINS: "http://localhost,http://localhost:5173,https://localhost,https://localhost:5173"
-      SECRET_KEY: 12345678
-      FIRST_SUPERUSER: devops@hng.tech
-      FIRST_SUPERUSER_PASSWORD: devops#HNG11
-      USERS_OPEN_REGISTRATION: "True"
-      EMAILS_FROM_EMAIL: info@example.com
-      SMTP_HOST: ""
-      SMTP_USER: ""
-      SMTP_PASSWORD: ""
-      SMTP_TLS: "True"
-      SMTP_SSL: "False"
-      SMTP_PORT: "587"
-      POSTGRES_SERVER: db
-      POSTGRES_PORT: 5432
-      POSTGRES_DB: app
       POSTGRES_USER: app
       POSTGRES_PASSWORD: graceful
-    command: ["poetry", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    volumes:
-      - ./frontend:/app
+      POSTGRES_DB: app
     ports:
-      - "3000:3000"
-    depends_on:
-      - backend
-    environment:
-      REACT_APP_BACKEND_URL: http://backend:8000
+      - "5432:5432"
 
-volumes:
-  postgres_data:
+  adminer:
+    image: adminer
+    container_name: adminer
+    ports:
+      - "8888:8080"
+
+  # traefik:
+  #   image: traefik:v2.5
+  #   container_name: traefik
+  #   command:
+  #     - "--api.insecure=true"
+  #     - "--providers.docker=true"
+  #     - "--entrypoints.web.address=:80"
+  #   ports:
+  #     - "80:80"
+  #     - "8080:8080"
+  #   volumes:
+  #     - "/var/run/docker.sock:/var/run/docker.sock:ro"
+  
+  traefik:
+    image: traefik:v2.5
+    container_name: traefik
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.myresolver.acme.httpchallenge=true"
+      - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.myresolver.acme.email=graceolasupo19@gmail.com"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./letsencrypt:/letsencrypt"
+
+
