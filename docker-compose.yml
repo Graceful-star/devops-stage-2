@@ -74,7 +74,7 @@ services:
       - "traefik.http.routers.frontend.entrypoints=websecure"
       - "traefik.http.routers.frontend.tls.certresolver=myresolver"
     ports:
-      - "80:80"
+      - "3000:3000"
 
   backend:
     build:
@@ -131,8 +131,8 @@ services:
       - "--certificatesresolvers.myresolver.acme.email=graceolasupo19@gmail.com"
       - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
     ports:
-      - "80:80"
-      - "8888:8888"
+      # - "80:80"
+      - "8090:8090"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
       - "./letsencrypt:/letsencrypt"
