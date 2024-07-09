@@ -74,7 +74,7 @@ services:
       - "traefik.http.routers.frontend.entrypoints=websecure"
       - "traefik.http.routers.frontend.tls.certresolver=myresolver"
     ports:
-      - "3000:3000"
+      - "80:80"
 
   backend:
     build:
@@ -103,7 +103,7 @@ services:
     image: adminer
     container_name: adminer
     ports:
-      - "8888:8080"
+      - "8080:8080"
 
   # traefik:
   #   image: traefik:v2.5
@@ -132,7 +132,7 @@ services:
       - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
     ports:
       - "80:80"
-      - "443:443"
+      - "8888:8080"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
       - "./letsencrypt:/letsencrypt"
