@@ -83,16 +83,18 @@ WORKDIR /app
 
 # Copy package.json
 COPY package.json ./
+COPY ./package-lock.json ./
 
 # Install dependencies
 RUN npm install
 
 # Copy your frontend code
 COPY . .
+COPY ./ /app/
 
 # Expose port (adjust if your app uses a different port)
 EXPOSE 3000
 
 # Command to run the development server (replace with your actual command)
-CMD [ "nginx", "-g", "daemon off;" ]
+CMD [ "npm", "run", "dev", "--", "--host" ]
 
